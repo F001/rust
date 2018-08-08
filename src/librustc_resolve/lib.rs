@@ -2798,22 +2798,12 @@ impl<'a, 'crateloader: 'a> Resolver<'a, 'crateloader> {
     }
 
     fn resolve_tuple_struct_self_ctor(&mut self, node_id: NodeId, p: &ast::Path, sp: Span) -> bool {
-        debug!("FCC enter resolve_tuple_struct_self_ctor {:?}", self.session.codemap().lookup_line(sp.lo()));
         if self.session.features_untracked().tuple_struct_self_ctor &&
             p.segments.len() >= 1 && p.segments[0].ident.name == keywords::SelfType.name() {
-            debug!("FCC path is Self");
             if let Some(LexicalScopeBinding::Def(def)) = self.resolve_ident_in_lexical_scope(
                         keywords::SelfType.ident(), TypeNS, None, sp) {
-                debug!("FCC Self type resolved: {:?}", def);
                 self.record_def(node_id, PathResolution::new(def));
                 return true;
-                // if let Def::SelfTy(_, Some(id)) = def {
-                //     debug!("FCC struct_constructors keys: {:?}", self.struct_constructors.keys());
-                //     if let Some((ctor_def, _ctor_vis)) = self.struct_constructors.get(&id).cloned() {
-                //         self.record_def(node_id, PathResolution::new(ctor_def));
-                //         return true;
-                //     }
-                // }
             }
         }
         return false;
@@ -4089,7 +4079,6 @@ impl<'a, 'crateloader: 'a> Resolver<'a, 'crateloader> {
                 } else {
                     false
                 };
-                debug!("FCC resolve_tuple_struct_self_ctor returns {:?}", resolved);
                 if !resolved {
                     self.resolve_expr(callee, Some(expr));
                 }

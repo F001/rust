@@ -22,7 +22,6 @@ use rustc::ty::subst::Substs;
 use rustc_target::spec::abi;
 use syntax::ast::Ident;
 use syntax_pos::Span;
-use syntax::symbol::keywords;
 
 use rustc::hir;
 
@@ -57,7 +56,6 @@ impl<'a, 'gcx, 'tcx> FnCtxt<'a, 'gcx, 'tcx> {
         } else {
             self.check_expr(callee_expr)
         };
-        debug!("FCC fn checked callee_expr: {:?} original_callee_ty: {:?}", callee_expr, original_callee_ty);
         let expr_ty = self.structurally_resolved_type(call_expr.span, original_callee_ty);
 
         let mut autoderef = self.autoderef(callee_expr.span, expr_ty);
@@ -94,30 +92,22 @@ impl<'a, 'gcx, 'tcx> FnCtxt<'a, 'gcx, 'tcx> {
 
     fn check_tuple_struct_self_ctor(&self, callee_expr: &'gcx hir::Expr) -> Option<Ty<'tcx>> {
         if let hir::ExprKind::Path(ref qpath) = callee_expr.node {
-            debug!("FCC callee_expr is a path {:?}", qpath);
-            if let hir::QPath::Resolved(_ty, p) = qpath {
-                if p.segments.len() > 0  && p.segments[0].ident.name == keywords::SelfType.name() {
-                    if let Some((variant, _struct_ty)) = self.check_struct_path(qpath, callee_expr.id) {
-                        debug!("FCC check_tuple_struct_self_ctor returns {:?}", variant);
-
-                        let node_id = self.tcx.hir.as_local_node_id(variant.did);
-                        debug!("FCC node_id of variant {:?}", node_id);
-
-                        if let Some(node_id) = node_id {
-                            let node = self.tcx.hir.get(node_id);
-                            debug!("FCC node_id {:?} NodeVariant {:?}", node_id, node);
-                            if let NodeStructCtor(data) = node {
-                                if let hir::VariantData::Tuple(..) = *data {
-                                    let substs = Substs::identity_for_item(self.tcx, variant.did);
-                                    let ty = self.tcx.mk_fn_def(variant.did, substs);
-                                    debug!("FCC write type for node {} {}", node_id, self.tcx.hir.node_to_string(node_id));
-                                    debug!("FCC node type {:?}", ty);
-                                    self.write_ty(callee_expr.hir_id, ty);
-                                    return Some(ty);
-                                }
-                                debug!("FCC Self is not tuple");
+            let is_self_ty = match self.tables.borrow().qpath_def(qpath, callee_expr.hir_id) {
+                Def::SelfTy(..) => true,
+                _ => false,
+            };
+            if is_self_ty {
+                if let Some((variant, _)) = self.check_struct_path(qpath, callee_expr.id) {
+                    let node_id = self.tcx.hir.as_local_node_id(variant.did);
+                    if let Some(node_id) = node_id {
+                        let node = self.tcx.hir.get(node_id);
+                        if let NodeStructCtor(data) = node {
+                            if let hir::VariantData::Tuple(..) = *data {
+                                let substs = Substs::identity_for_item(self.tcx, variant.did);
+                                let ty = self.tcx.mk_fn_def(variant.did, substs);
+                                self.write_ty(callee_expr.hir_id, ty);
+                                return Some(ty);
                             }
-                            debug!("FCC Node is not NodeVariant");
                         }
                     }
                 }
