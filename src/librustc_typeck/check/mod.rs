@@ -4314,7 +4314,16 @@ impl<'a, 'gcx, 'tcx> FnCtxt<'a, 'gcx, 'tcx> {
     {
         let (ty, item_segment) = match *qpath {
             hir::QPath::Resolved(ref opt_qself, ref path) => {
-                return (path.def,
+                let def = if let Def::SelfTy(..) = path.def {
+                    if let Some((variant, _)) = self.check_struct_path(qpath, node_id) {
+                        Def::StructCtor(variant.did, hir::def::CtorKind::Fn)
+                    } else {
+                        path.def
+                    }
+                } else {
+                    path.def
+                };
+                return (def,
                         opt_qself.as_ref().map(|qself| self.to_ty(qself)),
                         &path.segments[..]);
             }

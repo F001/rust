@@ -1288,7 +1288,8 @@ impl<'a, 'gcx, 'tcx> MemCategorizationContext<'a, 'gcx, 'tcx> {
                     (self.cat_downcast_if_needed(pat, cmt, def_id),
                      self.tcx.adt_def(enum_def).variant_with_id(def_id).fields.len())
                 }
-                Def::StructCtor(_, CtorKind::Fn) => {
+                Def::StructCtor(_, CtorKind::Fn) |
+                Def::SelfTy(..) => {
                     match self.pat_ty_unadjusted(&pat)?.sty {
                         ty::TyAdt(adt_def, _) => {
                             (cmt, adt_def.non_enum_variant().fields.len())
