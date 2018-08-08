@@ -752,6 +752,7 @@ fn convert_path_expr<'a, 'gcx, 'tcx>(cx: &mut Cx<'a, 'gcx, 'tcx>,
         // A regular function, constructor function or a constant.
         Def::Fn(_) |
         Def::Method(_) |
+        Def::SelfTy(..) |
         Def::StructCtor(_, CtorKind::Fn) |
         Def::VariantCtor(_, CtorKind::Fn) => ExprKind::Literal {
             literal: ty::Const::zero_sized(
