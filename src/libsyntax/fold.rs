@@ -366,6 +366,10 @@ pub fn noop_fold_arm<T: Folder>(Arm {attrs, pats, guard, body}: Arm,
 pub fn noop_fold_guard<T: Folder>(g: Guard, fld: &mut T) -> Guard {
     match g {
         Guard::If(e) => Guard::If(fld.fold_expr(e)),
+        Guard::IfLet(pats, e) => Guard::IfLet(
+                pats.into_iter().map(|x| fld.fold_pat(x)).collect(),
+                fld.fold_expr(e)
+            ),
     }
 }
 

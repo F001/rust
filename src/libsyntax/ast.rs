@@ -864,6 +864,7 @@ pub struct Arm {
 #[derive(Clone, RustcEncodable, RustcDecodable, Debug)]
 pub enum Guard {
     If(P<Expr>),
+    IfLet(Vec<P<Pat>>, P<Expr>),
 }
 
 #[derive(Clone, RustcEncodable, RustcDecodable, Debug)]

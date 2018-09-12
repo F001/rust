@@ -490,6 +490,14 @@ impl<'a, 'tcx> CFGBuilder<'a, 'tcx> {
                     // Visit the guard expression
                     let guard_exit = match guard {
                         hir::Guard::If(ref e) => self.expr(e, guard_start),
+                        hir::Guard::IfLet(ref pats, ref e) => {
+                            let guard_exit = self.add_dummy_node(&[]);
+                            for gp in pats {
+                                let gp_exit = self.pat(&pat, guard_exit);
+                                self.add_contained_edge(gp_exit, guard_exit);
+                            }
+                            guard_exit
+                        }
                     };
                     // #47295: We used to have very special case code
                     // here for when a pair of arms are both formed

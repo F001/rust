@@ -1056,6 +1056,12 @@ impl<'a> LoweringContext<'a> {
             pats: arm.pats.iter().map(|x| self.lower_pat(x)).collect(),
             guard: match arm.guard {
                 Some(Guard::If(ref x)) => Some(hir::Guard::If(P(self.lower_expr(x)))),
+                Some(Guard::IfLet(ref pats, ref e)) => Some(
+                        hir::Guard::IfLet(
+                            pats.iter().map(|x| self.lower_pat(x)).collect(),
+                            P(self.lower_expr(e))
+                        )
+                    ),
                 _ => None,
             },
             body: P(self.lower_expr(&arm.body)),

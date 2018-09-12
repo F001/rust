@@ -2690,6 +2690,25 @@ impl<'a> State<'a> {
         Ok(())
     }
 
+    fn print_guard(&mut self, g: &ast::Guard) -> io::Result<()> {
+        match g {
+            ast::Guard::If(ref e) => {
+                self.word_space("if")?;
+                self.print_expr(e)?;
+                self.s.space()?;
+            }
+            ast::Guard::IfLet(ref pats, ref e) => {
+                self.word_space("if let")?;
+                self.print_pats(pats)?;
+                self.s.space()?;
+                self.word_space("=")?;
+                self.print_expr_as_cond(e)?;
+                self.s.space()?;
+            }
+        }
+        Ok(())
+    }
+
     fn print_arm(&mut self, arm: &ast::Arm) -> io::Result<()> {
         // I have no idea why this check is necessary, but here it
         // is :(
@@ -2703,13 +2722,7 @@ impl<'a> State<'a> {
         self.print_pats(&arm.pats)?;
         self.s.space()?;
         if let Some(ref g) = arm.guard {
-            match g {
-                ast::Guard::If(ref e) => {
-                    self.word_space("if")?;
-                    self.print_expr(e)?;
-                    self.s.space()?;
-                }
-            }
+            self.print_guard(g)?;
         }
         self.word_space("=>")?;
 

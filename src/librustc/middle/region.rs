@@ -890,6 +890,10 @@ fn resolve_arm<'a, 'tcx>(visitor: &mut RegionResolutionVisitor<'a, 'tcx>, arm: &
     if let Some(ref g) = arm.guard {
         match g {
             hir::Guard::If(ref expr) => visitor.terminating_scopes.insert(expr.hir_id.local_id),
+            hir::Guard::IfLet(ref pats, ref e) => {
+                walk_list!(visitor, visit_pat, pats);
+                visitor.terminating_scopes.insert(e.hir_id.local_id),
+            }
         };
     }
 

@@ -1105,6 +1105,10 @@ pub fn walk_arm<'v, V: Visitor<'v>>(visitor: &mut V, arm: &'v Arm) {
     if let Some(ref g) = arm.guard {
         match g {
             Guard::If(ref e) => visitor.visit_expr(e),
+            Guard::IfLet(ref pats, ref e) => {
+                walk_list!(visitor, visit_pat, pats);
+                visitor.visit_expr(e);
+            }
         }
     }
     visitor.visit_expr(&arm.body);
