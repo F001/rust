@@ -515,6 +515,7 @@ impl_stable_hash_for!(struct hir::Arm {
 
 impl_stable_hash_for!(enum hir::Guard {
     If(expr),
+    IfLet(pats, expr),
 });
 
 impl_stable_hash_for!(struct hir::Field {

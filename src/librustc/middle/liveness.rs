@@ -1110,18 +1110,29 @@ impl<'a, 'tcx> Liveness<'a, 'tcx> {
                 self.init_empty(ln, succ);
                 let mut first_merge = true;
                 for arm in arms {
-                    let body_succ = self.propagate_through_expr(&arm.body, succ);
-
-                    let guard_succ = self.propagate_through_opt_expr(
-                        arm.guard.as_ref().map(|hir::Guard::If(e)| &**e),
-                        body_succ
-                    );
+                    let body_succ =
+                        self.propagate_through_expr(&arm.body, succ);
+                    let guard_succ = match arm.guard {
+                        Some(hir::Guard::If(ref e)) => {
+                            self.propagate_through_opt_expr(Some(&**e), body_succ)
+                        }
+                        Some(hir::Guard::IfLet(ref pats, ref e)) => {
+                            let mut first_merge_inner = true;
+                            for pat in pats {
+                                let pat_succ = self.define_bindings_in_pat(pat, succ);
+                                self.merge_from_succ(ln, pat_succ, first_merge_inner);
+                                first_merge_inner = false;
+                            }
+                            self.propagate_through_expr(e, ln)
+                        }
+                        None => body_succ,
+                    };
                     // only consider the first pattern; any later patterns must have
                     // the same bindings, and we also consider the first pattern to be
                     // the "authoritative" set of ids
                     let arm_succ =
                         self.define_bindings_in_arm_pats(arm.pats.first().map(|p| &**p),
-                                                         guard_succ);
+                                                        guard_succ);
                     self.merge_from_succ(ln, arm_succ, first_merge);
                     first_merge = false;
                 };

@@ -806,8 +806,16 @@ impl<'a, 'gcx, 'tcx> ExprUseVisitor<'a, 'gcx, 'tcx> {
             self.walk_pat(discr_cmt.clone(), &pat, mode);
         }
 
-        if let Some(hir::Guard::If(ref e)) = arm.guard {
-            self.consume_expr(e)
+        if let Some(ref guard) = arm.guard {
+            match guard {
+                hir::Guard::If(ref e) => self.consume_expr(e),
+                hir::Guard::IfLet(ref pats, ref e) => {
+                    for p in pats {
+                        self.walk_pat(discr_cmt.clone(), p, mode);
+                    }
+                    self.consume_expr(e);
+                }
+            }
         }
 
         self.consume_expr(&arm.body);

@@ -1932,6 +1932,39 @@ impl<'a> State<'a> {
         self.ann.post(self, AnnNode::Pat(pat))
     }
 
+    pub fn print_pats(&mut self, pats: &[P<hir::Pat>]) -> io::Result<()> {
+        let mut first = true;
+        for p in pats {
+            if first {
+                first = false;
+            } else {
+                self.s.space()?;
+                self.word_space("|")?;
+            }
+            self.print_pat(&p)?;
+        }
+        Ok(())
+    }
+
+    fn print_guard(&mut self, g: &hir::Guard) -> io::Result<()> {
+        match g {
+            hir::Guard::If(ref e) => {
+                self.word_space("if")?;
+                self.print_expr(e)?;
+                self.s.space()?;
+            }
+            hir::Guard::IfLet(ref pats, ref e) => {
+                self.word_space("if let")?;
+                self.print_pats(&**pats)?;
+                self.s.space()?;
+                self.word_space("=")?;
+                self.print_expr_as_cond(e)?;
+                self.s.space()?;
+            }
+        }
+        Ok(())
+    }
+
     fn print_arm(&mut self, arm: &hir::Arm) -> io::Result<()> {
         // I have no idea why this check is necessary, but here it
         // is :(
@@ -1941,25 +1974,10 @@ impl<'a> State<'a> {
         self.cbox(indent_unit)?;
         self.ibox(0)?;
         self.print_outer_attributes(&arm.attrs)?;
-        let mut first = true;
-        for p in &arm.pats {
-            if first {
-                first = false;
-            } else {
-                self.s.space()?;
-                self.word_space("|")?;
-            }
-            self.print_pat(&p)?;
-        }
+        self.print_pats(&arm.pats)?;
         self.s.space()?;
         if let Some(ref g) = arm.guard {
-            match g {
-                hir::Guard::If(e) => {
-                    self.word_space("if")?;
-                    self.print_expr(&e)?;
-                    self.s.space()?;
-                }
-            }
+            self.print_guard(g)?;
         }
         self.word_space("=>")?;
 

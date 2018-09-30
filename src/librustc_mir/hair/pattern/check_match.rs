@@ -190,6 +190,12 @@ impl<'a, 'tcx> MatchVisitor<'a, 'tcx> {
             for pat in &arm.pats {
                 check_for_bindings_named_the_same_as_variants(self, pat);
             }
+
+            if let Some(hir::Guard::IfLet(ref pats, _)) = arm.guard {
+                for p in pats {
+                    check_for_bindings_named_the_same_as_variants(self, &**p);
+                }
+            }
         }
 
         let module = self.tcx.hir.get_module_parent(scrut.id);
@@ -208,9 +214,7 @@ impl<'a, 'tcx> MatchVisitor<'a, 'tcx> {
                     }
                     (pattern, &**pat)
                 }).collect(),
-                arm.guard.as_ref().map(|g| match g {
-                    hir::Guard::If(ref e) => &**e,
-                })
+                arm.guard.as_ref()
             )).collect();
 
             // Bail out early if inlining failed.
@@ -358,7 +362,7 @@ fn pat_is_catchall(pat: &Pat) -> bool {
 
 // Check for unreachable patterns
 fn check_arms<'a, 'tcx>(cx: &mut MatchCheckCtxt<'a, 'tcx>,
-                        arms: &[(Vec<(&'a Pattern<'tcx>, &hir::Pat)>, Option<&hir::Expr>)],
+                        arms: &[(Vec<(&'a Pattern<'tcx>, &hir::Pat)>, Option<&hir::Guard>)],
                         source: hir::MatchSource)
 {
     let mut seen = Matrix::empty();
@@ -596,7 +600,7 @@ fn check_for_mutation_in_guard(cx: &MatchVisitor, guard: &hir::Guard) {
         cx,
     };
     match guard {
-        hir::Guard::If(expr) =>
+        hir::Guard::If(expr) | hir::Guard::IfLet(_, expr) =>
             ExprUseVisitor::new(&mut checker,
                                 cx.tcx,
                                 cx.param_env,

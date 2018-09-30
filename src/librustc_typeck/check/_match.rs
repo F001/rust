@@ -631,7 +631,7 @@ https://doc.rust-lang.org/reference/types.html#trait-objects");
         let all_arm_pats_diverge: Vec<_> = arms.iter().map(|arm| {
             let mut all_pats_diverge = Diverges::WarnedAlways;
             for p in &arm.pats {
-                self.diverges.set(Diverges::Maybe);
+                 self.diverges.set(Diverges::Maybe);
                 self.check_pat_walk(&p, discrim_ty,
                     ty::BindingMode::BindByValue(hir::Mutability::MutImmutable), true);
                 all_pats_diverge &= self.diverges.get();
@@ -676,7 +676,16 @@ https://doc.rust-lang.org/reference/types.html#trait-objects");
             if let Some(ref g) = arm.guard {
                 self.diverges.set(pats_diverge);
                 match g {
-                    hir::Guard::If(e) => self.check_expr_has_type_or_error(e, tcx.types.bool),
+                    hir::Guard::If(e) => {
+                        self.check_expr_has_type_or_error(e, tcx.types.bool);
+                    }
+                    hir::Guard::IfLet(pats, e) => {
+                        let ty = self.check_expr(e);
+                        for p in pats {
+                            self.check_pat_walk(p, ty,
+                                ty::BindingMode::BindByValue(hir::Mutability::MutImmutable), true);
+                        }
+                    }
                 };
             }
 
