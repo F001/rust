@@ -1231,6 +1231,9 @@ impl<'a, 'gcx, 'tcx> Builder<'a, 'gcx, 'tcx> {
             // guard, this block is simply unreachable
             let guard = match guard {
                 Guard::If(e) => self.hir.mirror(e),
+                Guard::IfLet(pats, e) => {
+
+                }
             };
             let source_info = self.source_info(guard.span);
             let cond = unpack!(block = self.as_local_operand(block, guard));

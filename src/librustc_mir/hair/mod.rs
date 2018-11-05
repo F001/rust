@@ -333,6 +333,7 @@ pub struct Arm<'tcx> {
 #[derive(Clone, Debug)]
 pub enum Guard<'tcx> {
     If(ExprRef<'tcx>),
+    IfLet(Vec<Pattern<'tcx>>, ExprRef<'tcx>),
 }
 
 #[derive(Copy, Clone, Debug)]
