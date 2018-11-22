@@ -1130,6 +1130,64 @@ impl<T: ?Sized> Weak<T> {
             Some(unsafe { self.ptr.as_ref() })
         }
     }
+
+    /// Gets the number of strong (`Rc`) pointers to this value.
+    ///
+    /// # Safety
+    ///
+    /// This method by itself is safe, but using it correctly requires extra care.
+    /// Another thread can change the strong count at any time,
+    /// including potentially between calling this method and acting on the result.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use std::sync::{Arc, Weak};
+    ///
+    /// let five = Arc::new(5);
+    /// let also_five = Arc::clone(&five);
+    /// let weak_five = Arc::downgrade(&five);
+    /// assert_eq!(Some(2), Weak::strong_count(&weak_five));
+    ///
+    /// let dangling = Weak::new();
+    /// assert_eq!(None, Weak::strong_count(&dangling));
+    /// ```
+    #[inline]
+    #[unstable(feature = "weak_counts", issue = "")]
+    pub fn strong_count(this: &Self) -> Option<bool> {
+        this.inner().map(|inner| inner.strong.load(SeqCst))
+    }
+
+    /// Gets the number of [`Weak`][weak] pointers to this value.
+    ///
+    /// [weak]: struct.Weak.html
+    ///
+    /// # Safety
+    ///
+    /// This method by itself is safe, but using it correctly requires extra care.
+    /// Another thread can change the weak count at any time,
+    /// including potentially between calling this method and acting on the result.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use std::sync::{Arc, Weak};
+    ///
+    /// let five = Arc::new(5);
+    /// let weak_five = Arc::downgrade(&five);
+    /// assert_eq!(Some(1), Weak::weak_count(&weak_five));
+    ///
+    /// let dangling = Weak::new();
+    /// assert_eq!(None, Weak::weak_count(&dangling));
+    /// ```
+    #[inline]
+    #[unstable(feature = "weak_counts", issue = "")]
+    pub fn weak_count(this: &Self) -> Option<bool> {
+        this.inner().map(|inner| {
+            let cnt = inner.weak.load(SeqCst);
+            if cnt == usize::MAX { 0 } else { cnt - 1 }
+        })
+    }
 }
 
 #[stable(feature = "arc_weak", since = "1.4.0")]

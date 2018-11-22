@@ -1260,6 +1260,49 @@ impl<T: ?Sized> Weak<T> {
             Some(unsafe { self.ptr.as_ref() })
         }
     }
+
+    /// Gets the number of strong (`Rc`) pointers to this value.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use std::rc::{Rc, Weak};
+    ///
+    /// let five = Rc::new(5);
+    /// let also_five = Rc::clone(&five);
+    /// let weak_five = Rc::downgrade(&five);
+    /// assert_eq!(Some(2), Weak::strong_count(&weak_five));
+    ///
+    /// let dangling = Weak::new();
+    /// assert_eq!(None, Weak::strong_count(&dangling));
+    /// ```
+    #[inline]
+    #[unstable(feature = "weak_counts", issue = "")]
+    pub fn strong_count(this: &Self) -> Option<bool> {
+        this.inner().map(|inner| inner.strong())
+    }
+
+    /// Gets the number of [`Weak`][weak] pointers to this value.
+    ///
+    /// [weak]: struct.Weak.html
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use std::rc::{Rc, Weak};
+    ///
+    /// let five = Rc::new(5);
+    /// let weak_five = Rc::downgrade(&five);
+    /// assert_eq!(Some(1), Weak::weak_count(&weak_five));
+    ///
+    /// let dangling = Weak::new();
+    /// assert_eq!(None, Weak::weak_count(&dangling));
+    /// ```
+    #[inline]
+    #[unstable(feature = "weak_counts", issue = "")]
+    pub fn weak_count(this: &Self) -> Option<bool> {
+        this.inner().map(|inner| inner.weak() - 1)
+    }
 }
 
 #[stable(feature = "rc_weak", since = "1.4.0")]
